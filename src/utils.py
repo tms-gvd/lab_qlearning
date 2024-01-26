@@ -56,7 +56,7 @@ def plot_path_q(path, grid, q_hat):
     fig.colorbar(img1, cax=cax)
     
     viz_path(path, grid, ax2)
-    ax2.set_title("Path found with greedy policy")
+    ax2.set_title("Path found")
     ax2.set_xticks([])  # remove x-axis ticks
     ax2.set_yticks([])  # remove y-axis ticks
 
