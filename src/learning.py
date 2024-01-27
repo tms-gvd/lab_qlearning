@@ -1,5 +1,6 @@
 import numpy as np
 from tqdm import tqdm
+from src.utils import get_one_episode
 
 def VI(mdp, eps = 1e-2): #Value Iteration using the state value V
 
@@ -45,37 +46,41 @@ def VI_Q(mdp, eps=1e-2): #Value Iteration using the state-action value Q
     return Q, list_error
 
 
-def QLearning(mdp, behaviour_pol, q_theory, alpha=0.1, nb_iter=int(1e6)):
+def QLearning(mdp, behaviour_pol, q_theory, best_t, patience=1000, alpha=0.1, nb_iter=int(1e6)):
     # Qhat = np.random.rand(mdp.nb_states, mdp.nb_actions)
     Qhat = np.zeros((mdp.nb_states, mdp.nb_actions))
-    list_errors = []
-    counts = {"terminated": 0, "truncated": 0, "horizon": mdp.horizon}
+    list_errors = [np.inf]
     s = mdp.reset()
+    step_patience = 0
     
     print("Start Q learning with", str(behaviour_pol).split()[2].replace('.get_action', ''))
-    for i in tqdm(range(nb_iter)):
-        a = behaviour_pol(s, Qhat)
-        s_next, r, done = mdp.step(a)
-        if done:
-            if s_next in mdp.terminal_states:
-                assert s_next == mdp.terminal_states[-1], f"Wrong terrminal state {s_next}"
-                Qhat[s, a] = r
-                counts["terminated"] += 1
+    with tqdm(range(nb_iter), ncols=150) as pbar:
+        for i in pbar:
+            a = behaviour_pol(s, Qhat)
+            s_next, r, done = mdp.step(a)
+            if done:
+                if s_next in mdp.terminal_states:
+                    assert s_next == mdp.terminal_states[-1], f"Wrong terrminal state {s_next}"
+                    Qhat[s, a] = r
+                else:
+                    assert mdp.timestep == mdp.horizon + 1, f"Not in terminal states and timestep != horizon, {mdp.timestep} != {mdp.horizon}"
+                    delta = r + mdp.gamma*np.max(Qhat[s_next]) - Qhat[s, a]
+                    Qhat[s, a] = Qhat[s, a] + alpha*delta
+                s = mdp.reset()
             else:
-                assert mdp.timestep == mdp.horizon + 1, f"Not in terminal states and timestep != horizon, {mdp.timestep} != {mdp.horizon}"
-                counts["truncated"] += 1
-            s = mdp.reset()
-        else:
-            delta = r + mdp.gamma*np.max(Qhat[s_next]) - Qhat[s, a]
-            Qhat[s, a] = Qhat[s, a] + alpha*delta
-            s = s_next
-        
-        error = np.linalg.norm((Qhat - q_theory)[~mdp.wall_ixs])
-        list_errors.append(error)
-        if error < 1e-6:
-            print(f"Converged after {i} iterations")
-            break
-        
-
-    print(f"Reached {counts['terminated']} terminal states during learning")
-    return Qhat, np.array(list_errors), counts
+                delta = r + mdp.gamma*np.max(Qhat[s_next]) - Qhat[s, a]
+                Qhat[s, a] = Qhat[s, a] + alpha*delta
+                s = s_next
+            
+            list_errors.append(np.linalg.norm((Qhat - q_theory)[~mdp.wall_ixs]))
+            if list_errors[-1] == list_errors[-2]:
+                step_patience += 1
+            if step_patience > patience or list_errors[-1] < 1e-4:
+                score, t, _ = get_one_episode(mdp, Qhat)
+                pbar.set_postfix({"min path": t})
+                if t == best_t and score == 1:
+                    break
+                else:
+                    step_patience = 0
+    
+    return Qhat, np.array(list_errors[1:])
