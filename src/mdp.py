@@ -97,8 +97,7 @@ class MazeMdp(Mdp):
             t += 1
             state = next_state
             path.append(state)
-            if t > self.nb_states * 1.5:
-                print("episode too long")
+            if t > self.nb_states * 10:
                 break
         return score, t + 1, path # We just update this method to also output the time needed to complete the task.
 
