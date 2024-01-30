@@ -104,7 +104,8 @@ class MazeMdp(Mdp):
 
 class StochasticMazeMdp(MazeMdp):
     def __init__(self, stoch:float, *args, **kwargs):
-        super().__init__(stoch, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        self.stoch = stoch
     
     def step(self, a):
         if np.random.rand() < self.stoch:

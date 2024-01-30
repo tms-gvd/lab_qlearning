@@ -46,7 +46,7 @@ def VI_Q(mdp, eps=1e-2): #Value Iteration using the state-action value Q
     return Q, list_error
 
 
-def QLearning(mdp, behaviour_pol, q_theory, best_t, patience=1000, alpha=0.1, nb_iter=int(1e6)):
+def QLearning(mdp, behaviour_pol, q_theory, best_t, patience=1000, alpha=0.1, nb_iter=int(1e6), stop_patience=True, stop_error=True):
     # Qhat = np.random.rand(mdp.nb_states, mdp.nb_actions)
     Qhat = np.zeros((mdp.nb_states, mdp.nb_actions))
     list_errors = [np.inf]
@@ -73,9 +73,11 @@ def QLearning(mdp, behaviour_pol, q_theory, best_t, patience=1000, alpha=0.1, nb
                 s = s_next
             
             list_errors.append(np.linalg.norm((Qhat - q_theory)[~mdp.wall_ixs]))
+            if list_errors[-1] < 1e-4 and stop_error:
+                break
             if list_errors[-1] == list_errors[-2]:
                 step_patience += 1
-            if step_patience > patience or list_errors[-1] < 1e-4:
+            if step_patience > patience and stop_patience:
                 score, t, _ = get_one_episode(mdp, Qhat)
                 pbar.set_postfix({"min path": t})
                 if t == best_t and score == 1:
