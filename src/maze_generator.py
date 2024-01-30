@@ -64,7 +64,7 @@ def get_maze_mdp(nrows=5, ncols=5, p=.4, gamma=.9, seed=None):
     n = nrows * ncols
     S = np.arange(n)
     np.random.seed(seed)
-    seeds = np.random.randint(0, 1000, size=10000)
+    seeds = np.random.randint(0, 1000, size=1000)
     ix = 0
     
     while True:

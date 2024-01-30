@@ -2,7 +2,7 @@
 
 You first need to install the following packages:
 ```
-numpy matplotlib tqdm
+numpy matplotlib tqdm seaborn
 ```
 
 Then you can run an experiment with the following command:
